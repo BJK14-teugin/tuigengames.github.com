@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>가챠 유니버스</title>
+
+<style>
+body{
+font-family:sans-serif;
+background:#111;
+color:white;
+text-align:center;
+}
+
+button{
+padding:10px;
+margin:5px;
+font-size:14px;
+border:none;
+border-radius:8px;
+background:#ff9800;
+color:white;
+}
+
+#result{
+font-size:18px;
+margin:20px;
+white-space:pre-line;
+}
+
+#dex{
+margin-top:20px;
+text-align:left;
+width:90%;
+max-width:500px;
+margin:auto;
+}
+
+.item{
+padding:6px;
+border-bottom:1px solid #333;
+}
+
+#adminPanel{
+display:none;
+margin-top:20px;
+border:1px solid #444;
+padding:10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>🎰 가챠 유니버스</h1>
+
+<div id="coins">코인: 100</div>
+
+<button onclick="gacha()">가챠</button>
+<button onclick="gacha10()">10연</button>
+<button onclick="gacha100()">100연</button>
+<button onclick="daily()">출석</button>
+<button onclick="showDex()">도감</button>
+<button onclick="sellAll()">전체 판매</button>
+<button onclick="adminLogin()">관리자</button>
+
+<div id="result"></div>
+
+<div id="dex"></div>
+
+<div id="adminPanel">
+
+<h3>🛠 관리자 패널</h3>
+
+<button onclick="add1000()">1000연 버튼 추가</button>
+<button onclick="toggleInfinity()">코인 무한</button>
+<button onclick="toggleDubai()">DUBAI만 나오게</button>
+<button onclick="giveAll()">모든 아이템 지급</button>
+<button onclick="setCoins()">코인 설정</button>
+
+</div>
+
+<script>
+
+let coins=100;
+
+let infinityCoins=false;
+let dubaiMode=false;
+
+let sellPrice={
+"일반":5,
+"희귀":15,
+"초희귀":30,
+"전설":80,
+"신화":200,
+"언노운":500,
+"???":2000,
+"DUBAI":100000
+};
+
+let items=[
+
+{name:"나무",tier:"일반"},
+{name:"돌",tier:"일반"},
+{name:"물",tier:"일반"},
+{name:"모래",tier:"일반"},
+{name:"풀",tier:"일반"},
+
+{name:"늑대",tier:"희귀"},
+{name:"독수리",tier:"희귀"},
+{name:"번개",tier:"희귀"},
+
+{name:"용의 알",tier:"초희귀"},
+{name:"폭풍",tier:"초희귀"},
+
+{name:"드래곤",tier:"전설"},
+{name:"불사조",tier:"전설"},
+
+{name:"시간의 신",tier:"신화"},
+
+{name:"블랙홀",tier:"언노운"},
+
+{name:"창조자",tier:"???"},
+
+{name:"DUBAI ABU DHABI LUXURY STYLE",tier:"DUBAI"}
+
+];
+
+let obtained={};
+
+function updateCoins(){
+document.getElementById("coins").innerText="코인: "+coins;
+}
+
+function showResult(text){
+
+let r=document.getElementById("result");
+
+r.innerText=text;
+
+setTimeout(()=>{
+r.innerText="";
+},3000);
+
+}
+
+function draw(){
+
+if(dubaiMode){
+
+let item=items.find(i=>i.tier=="DUBAI");
+
+obtained[item.name]=(obtained[item.name]||0)+1;
+
+return "💎 ADMIN DUBAI\n"+item.name;
+
+}
+
+let r=Math.random()*100;
+
+let tier="";
+
+if(r<50) tier="일반";
+else if(r<75) tier="희귀";
+else if(r<88) tier="초희귀";
+else if(r<95) tier="전설";
+else if(r<98) tier="신화";
+else if(r<99.5) tier="언노운";
+else if(r<99.999) tier="???";
+else tier="DUBAI";
+
+let pool=items.filter(i=>i.tier==tier);
+
+let item=pool[Math.floor(Math.random()*pool.length)];
+
+let isNew=false;
+
+if(!obtained[item.name]){
+obtained[item.name]=0;
+isNew=true;
+}
+
+obtained[item.name]++;
+
+let msg=item.name+" ("+tier+")";
+
+if(tier=="전설") msg="🌟 전설 등장\n"+msg;
+if(tier=="신화") msg="🔥 신화 등장\n"+msg;
+if(tier=="언노운") msg="⚡ 언노운 등장\n"+msg;
+if(tier=="???") msg="💀 ??? 등장\n"+msg;
+if(tier=="DUBAI") msg="💎 초대박\n"+msg;
+
+if(isNew) msg="✨NEW\n"+msg;
+
+return msg;
+
+}
+
+function gacha(){
+
+if(!infinityCoins && coins<10)return;
+
+if(!infinityCoins){
+coins-=10;
+updateCoins();
+}
+
+showResult(draw());
+
+showDex();
+
+}
+
+function gacha10(){
+
+if(!infinityCoins && coins<100)return;
+
+if(!infinityCoins){
+coins-=100;
+updateCoins();
+}
+
+let text="10연 결과\n\n";
+
+for(let i=0;i<10;i++){
+text+=draw()+"\n";
+}
+
+showResult(text);
+
+showDex();
+
+}
+
+function gacha100(){
+
+if(!infinityCoins && coins<1000)return;
+
+if(!infinityCoins){
+coins-=1000;
+updateCoins();
+}
+
+let text="100연 결과\n\n";
+
+for(let i=0;i<100;i++){
+text+=draw()+"\n";
+}
+
+showResult(text);
+
+showDex();
+
+}
+
+function gacha1000(){
+
+let text="1000연 결과\n\n";
+
+for(let i=0;i<1000;i++){
+text+=draw()+"\n";
+}
+
+showResult(text);
+
+showDex();
+
+}
+
+function sell(name,tier){
+
+coins+=sellPrice[tier];
+
+obtained[name]--;
+
+if(obtained[name]<=0) delete obtained[name];
+
+updateCoins();
+
+showDex();
+
+}
+
+function sellAll(){
+
+let total=0;
+
+for(let name in obtained){
+
+let item=items.find(i=>i.name==name);
+
+total+=sellPrice[item.tier]*obtained[name];
+
+}
+
+obtained={};
+
+coins+=total;
+
+updateCoins();
+
+alert("전체 판매 +"+total);
+
+showDex();
+
+}
+
+function showDex(){
+
+let html="<h2>도감</h2>";
+
+items.forEach(i=>{
+
+let count=obtained[i.name]||0;
+
+html+=`<div class="item">
+${i.name} (${i.tier}) 보유:${count}
+${count>0?`<button onclick="sell('${i.name}','${i.tier}')">판매</button>`:""}
+</div>`;
+
+});
+
+dex.innerHTML=html;
+
+}
+
+function daily(){
+
+let today=new Date().toDateString();
+
+if(localStorage.getItem("daily")==today){
+alert("오늘 이미 받음");
+return;
+}
+
+coins+=200;
+
+localStorage.setItem("daily",today);
+
+updateCoins();
+
+alert("출석 +200");
+
+}
+
+function adminLogin(){
+
+let pw=prompt("관리자 암호");
+
+if(pw==="1234"){
+
+alert("관리자 모드");
+
+document.getElementById("adminPanel").style.display="block";
+
+}else{
+
+alert("암호 틀림");
+
+}
+
+}
+
+function add1000(){
+
+let btn=document.createElement("button");
+
+btn.innerText="1000연";
+
+btn.onclick=gacha1000;
+
+document.body.insertBefore(btn,document.getElementById("result"));
+
+}
+
+function toggleInfinity(){
+
+infinityCoins=!infinityCoins;
+
+if(infinityCoins){
+coins=999999999;
+alert("코인 무한 ON");
+}else{
+alert("코인 무한 OFF");
+}
+
+updateCoins();
+
+}
+
+function toggleDubai(){
+
+dubaiMode=!dubaiMode;
+
+alert(dubaiMode ? "DUBAI 모드 ON" : "DUBAI 모드 OFF");
+
+}
+
+function giveAll(){
+
+items.forEach(i=>{
+obtained[i.name]=1;
+});
+
+showDex();
+
+alert("모든 아이템 지급");
+
+}
+
+function setCoins(){
+
+let c=prompt("코인 입력");
+
+coins=parseInt(c)||coins;
+
+updateCoins();
+
+}
+
+</script>
+
+</body>
+</html>
