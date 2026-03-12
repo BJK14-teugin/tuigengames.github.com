@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>퇴근게임즈</title>
+
+<style>
+
+body{
+background:#0f172a;
+color:white;
+font-family:sans-serif;
+text-align:center;
+margin:0;
+}
+
+header{
+background:#111827;
+padding:20px;
+font-size:32px;
+font-weight:bold;
+}
+
+.games{
+display:flex;
+flex-direction:column;
+align-items:center;
+margin-top:30px;
+gap:20px;
+}
+
+.game{
+background:#1e293b;
+padding:20px;
+width:250px;
+border-radius:12px;
+cursor:pointer;
+transition:0.2s;
+}
+
+.game:hover{
+background:#334155;
+transform:scale(1.05);
+}
+
+.game h2{
+margin:0;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+🎮 퇴근게임즈
+</header>
+
+<div class="games">
+
+<div class="game" onclick="location.href='snake.html'">
+<h2>🐍 NEON SNAKE</h2>
+</div>
+
+<div class="game" onclick="location.href='gacha.html'">
+<h2>🎰 가챠 유니버스</h2>
+</div>
+
+<div class="game" onclick="location.href='coin.html'">
+<h2>📈 코인 게임</h2>
+</div>
+
+</div>
+
+</body>
+</html>
