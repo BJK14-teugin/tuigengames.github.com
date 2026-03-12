@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>NEON SNAKE 2024</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <style>
+        body { margin:0; background:#000; color:#0ff; font-family:sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; overflow:hidden; touch-action:none; }
+        #m { width:300px; padding:20px; background:#111; border:2px solid #0ff; border-radius:15px; text-align:center; box-shadow: 0 0 15px #0ff; }
+        /* 캔버스 크기를 화면에 맞게 자동 조절하되 최대 400px 유지 */
+        canvas { background:#000; display:none; border:2px solid #333; width:95vw; height:95vw; max-width:400px; max-height:400px; box-shadow: 0 0 20px #0ff; }
+        button { width:100%; padding:12px; margin:5px 0; font-size:16px; font-weight:bold; border-radius:8px; border:none; color:#fff; cursor:pointer; }
+        #s { background:#0ff; color:#000; height: 55px; font-size: 20px; }
+        .b { background:#222; color:#0ff; border:1px solid #0ff; font-size:13px; }
+        #i { font-size:20px; margin-bottom:15px; display:none; text-shadow: 0 0 10px #0ff; }
+        #controls { display:none; grid-template-areas: ". up ." "left . right" ". down ."; gap: 15px; margin-top: 20px; }
+        .arrow { width: 65px; height: 65px; background: rgba(0,255,255,0.1); border: 2px solid #0ff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; color: #0ff; box-shadow: 0 0 10px #0ff; -webkit-tap-highlight-color: transparent; }
+        .arrow:active { background: #0ff; color: #000; }
+    </style>
+</head>
+<body>
+    <div id="i">SCORE: <span id="sc">0</span> | LIFE: <span id="li">1</span></div>
+    
+    <div id="m">
+        <h1 style="margin:0; letter-spacing:3px;">NEON SNAKE</h1>
+        <div style="text-align:left; font-size:13px; margin:15px 0;">SPEED: <input type="range" id="speedRange" min="50" max="350" step="50" value="200" style="width:100%;"></div>
+        <button class="b" onclick="unlockBonus()">🎁 보너스 팩</button>
+        <button class="b" onclick="unlockAdmin()" style="border-color:#f0f; color:#f0f;">🛡️ 특별 권한</button>
+        <button class="b" onclick="viewCode()" style="background:#c0392b; color:#fff;">⚙️ 관리자 옵션</button>
+        <button id="s" onclick="startGame()">GAME START</button>
+    </div>
+
+    <canvas id="c" width="400" height="400"></canvas>
+
+    <div id="controls">
+        <div class="arrow" style="grid-area:up" onclick="goUp()">▲</div>
+        <div class="arrow" style="grid-area:left" onclick="goLeft()">◀</div>
+        <div class="arrow" style="grid-area:right" onclick="goRight()">▶</div>
+        <div class="arrow" style="grid-area:down" onclick="goDown()">▼</div>
+    </div>
+
+    <script>
+        var cvs=document.getElementById("c"), ctx=cvs.getContext("2d");
+        var sc=0, li=1, gs=20, dx=20, dy=0, fx=0, fy=0, loop=null, gd=false;
+        var snX = [], snY = []; 
+
+        function unlockBonus() { if(prompt("보너스 암호:")==="123456789") { alert("적용!"); li=3; sc=30; } }
+        function unlockAdmin() { if(prompt("특별 권한 암호:")==="1234") { alert("무적 활성화!"); gd=true; } }
+        function viewCode() { if(prompt("관리자 암호:")==="1234") alert(document.documentElement.outerHTML); }
+
+        function goUp(){ if(dy==0){dx=0; dy=-gs;} }
+        function goDown(){ if(dy==0){dx=0; dy=gs;} }
+        function goLeft(){ if(dx==0){dx=-gs; dy=0;} }
+        function goRight(){ if(dx==0){dx=gs; dy=0;} }
+
+        function startGame() {
+            document.getElementById("m").style.display="none";
+            cvs.style.display="block";
+            document.getElementById("controls").style.display="grid";
+            document.getElementById("i").style.display="block";
+            init();
+        }
+
+        function init() {
+            snX = [200, 180, 160]; 
+            snY = [200, 200, 200];
+            dx=gs; dy=0; fx=Math.floor(Math.random()*19)*gs; fy=Math.floor(Math.random()*19)*gs;
+            if(loop) clearTimeout(loop);
+            play();
+        }
+
+        function play() {
+            var speed = 400 - document.getElementById("speedRange").value;
+            loop = setTimeout(function() {
+                ctx.fillStyle="black"; ctx.fillRect(0,0,400,400);
+
+                var nx = snX[0] + dx;
+                var ny = snY[0] + dy;
+
+                if(gd) {
+                    if(nx < 0) nx = 380; if(nx > 380) nx = 0;
+                    if(ny < 0) ny = 380; if(ny > 380) ny = 0;
+                } else {
+                    if(nx < 0 || nx > 380 || ny < 0 || ny > 380) { li--; if(li>0){init(); return;} else {alert("GameOver"); location.reload(); return;} }
+                    for(var i=0; i<snX.length; i++) { if(snX[i] == nx && snY[i] == ny) { li--; if(li>0){init(); return;} else {alert("GameOver"); location.reload(); return;} } }
+                }
+
+                snX.unshift(nx); snY.unshift(ny);
+
+                if(nx == fx && ny == fy) {
+                    sc += 10; document.getElementById("sc").innerText = sc;
+                    fx=Math.floor(Math.random()*19)*gs; fy=Math.floor(Math.random()*19)*gs;
+                } else {
+                    snX.pop(); snY.pop();
+                }
+
+                ctx.fillStyle="#f00"; ctx.fillRect(fx+2, fy+2, gs-4, gs-4);
+                for(var j=0; j<snX.length; j++) {
+                    ctx.fillStyle = (j==0) ? (gd?"#f0f":"#fff") : (gd?"#808":"#0ff");
+                    ctx.fillRect(snX[j]+1, snY[j]+1, gs-2, gs-2);
+                }
+
+                document.getElementById("li").innerText = li;
+                play();
+            }, speed);
+        }
+    </script>
+</body>
+</html>
+
