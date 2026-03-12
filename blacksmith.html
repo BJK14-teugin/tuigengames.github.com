@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전설의 대장장이: 방어구와 상점</title>
+    <style>
+        :root { --bg: #0d0d0f; --card: #1a1a1e; --accent: #00f2ff; --protect: #ffcc00; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .container { width: 100%; max-width: 400px; background: var(--card); padding: 25px; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.5); text-align: center; border: 1px solid #333; }
+        
+        .status-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; font-size: 13px; font-weight: bold; }
+        .gold-txt { color: #00ff95; } .shield-txt { color: var(--protect); }
+
+        .item-window { padding: 40px 10px; background: #000; border-radius: 15px; margin-bottom: 20px; border: 2px solid #222; }
+        .item-name { font-size: 16px; color: #888; margin-bottom: 8px; }
+        .item-level { font-size: 48px; font-weight: 900; color: var(--accent); }
+
+        .shop-box { background: #222; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #333; }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        
+        button { padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-up { background: var(--accent); color: #000; width: 100%; height: 55px; font-size: 18px; margin-bottom: 10px; }
+        .btn-sell { background: #2ecc71; color: #fff; }
+        .btn-buy { background: var(--protect); color: #000; }
+        .btn-reset { background: #333; color: #888; font-size: 12px; width: 100%; }
+
+        .broken { color: #ff4d4d !important; text-decoration: line-through; }
+        .success { animation: flash 0.4s; }
+        @keyframes flash { 0% { background: #00f2ff33; } 100% { background: #000; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="status-bar">
+        <div class="gold-txt">GOLD: <span id="gold">5,000</span>💰</div>
+        <div class="shield-txt">방지권: <span id="shield">0</span>🛡️</div>
+    </div>
+
+    <div id="item-window" class="item-window">
+        <div id="name" class="item-name">훈련용 목검</div>
+        <div id="level" class="item-level">+0</div>
+    </div>
+
+    <div class="shop-box">
+        <div style="font-size: 12px; margin-bottom: 10px; color: #aaa;">
+            판매가: <b id="sell-price" style="color:#2ecc71">0</b>💰 | 
+            강화비: <b id="cost">100</b>💰
+        </div>
+        <div class="btn-group">
+            <button class="btn-sell" onclick="sellItem()">아이템 판매</button>
+            <button class="btn-buy" onclick="buyShield()">방지권 구매 (5천💰)</button>
+        </div>
+        <div style="font-size: 11px; color: #777;">* 10강부터 실패 시 파괴될 수 있습니다.</div>
+    </div>
+
+    <button class="btn-up" onclick="upgrade()">강화하기 (성공 <span id="prob">100</span>%)</button>
+    <button class="btn-reset" onclick="reset()">새 아이템 받기</button>
+    <div id="msg" style="margin-top: 15px; font-size: 13px;"></div>
+</div>
+
+<script>
+    let lv = 0, gold = 5000, shields = 0, broken = false;
+    const prefixes = ["녹슨", "연습용", "잘 다듬어진", "강화된", "날카로운", "숙련자의", "기사의", "화려한", "궁극의", "빛나는", "영광스러운", "고대의", "초월적인", "신비한", "환상적인", "심연의", "드래곤", "불멸의", "신의", "은하의", "차원의", "우주의", "공허의", "창조의", "절대자의", "영겁의", "종말의", "전설의", "무한의", "해탈의", "신격의"];
+
+    function getProb(l) {
+        if (l < 5) return 100; if (l < 10) return 70; if (l < 15) return 40;
+        if (l < 20) return 20; if (l < 25) return 8; if (l < 29) return 1; return 0.1;
+    }
+
+    function getSellPrice(l) { return Math.floor(Math.pow(l, 2.5) * 150) + 100; }
+
+    function upgrade() {
+        if (broken) return alert("부서진 아이템입니다.");
+        const cost = (lv + 1) * 200;
+        if (gold < cost) return alert("골드가 부족합니다.");
+
+        gold -= cost;
+        const prob = getProb(lv);
+        const rand = Math.random() * 100;
+        const msg = document.getElementById('msg');
+        const window = document.getElementById('item-window');
+
+        if (rand <= prob) {
+            lv++;
+            msg.innerText = "✨ 강화 성공! (" + lv + ")";
+            msg.style.color = "#00f2ff";
+            window.classList.add('success');
+            setTimeout(() => window.classList.remove('success'), 400);
+        } else {
+            // 실패 시 로직
+            if (lv >= 10) {
+                if (shields > 0) {
+                    shields--;
+                    msg.innerText = "🛡️ 파괴 방지권 사용! 파괴를 면했습니다.";
+                    msg.style.color = "#ffcc00";
+                    lv = Math.max(0, lv - 1);
+                } else if (Math.random() < 0.25) { // 25% 확률로 파괴
+                    broken = true;
+                    document.getElementById('level').classList.add('broken');
+                    msg.innerText = "❌ 아이템이 파괴되었습니다.";
+                    msg.style.color = "#ff4d4d";
+                } else {
+                    lv = Math.max(0, lv - 1);
+                    msg.innerText = "💦 강화 실패! 등급이 하락했습니다.";
+                    msg.style.color = "#ffaa00";
+                }
+            } else {
+                lv = Math.max(0, lv - 1);
+                msg.innerText = "강화 실패!";
+            }
+        }
+        update();
+    }
+
+    function sellItem() {
+        if (broken || lv === 0) return alert("팔 수 없는 아이템입니다.");
+        const price = getSellPrice(lv);
+        gold += price;
+        alert(`+${lv} 장비를 ${price.toLocaleString()}골드에 판매했습니다.`);
+        reset();
+    }
+
+    function buyShield() {
+        if (gold < 5000) return alert("골드가 부족합니다.");
+        gold -= 5000;
+        shields++;
+        update();
+    }
+
+    function update() {
+        document.getElementById('gold').innerText = gold.toLocaleString();
+        document.getElementById('shield').innerText = shields;
+        document.getElementById('level').innerText = broken ? "BROKEN" : "+" + lv;
+        document.getElementById('name').innerText = broken ? "고철 더미" : prefixes[lv] + " 대검";
+        document.getElementById('prob').innerText = getProb(lv);
+        document.getElementById('cost').innerText = ((lv + 1) * 200).toLocaleString();
+        document.getElementById('sell-price').innerText = (broken ? 0 : getSellPrice(lv)).toLocaleString();
+    }
+
+    function reset() {
+        lv = 0; broken = false;
+        document.getElementById('level').classList.remove('broken');
+        document.getElementById('msg').innerText = "";
+        update();
+    }
+    update();
+</script>
+</body>
+</html>
+
+
