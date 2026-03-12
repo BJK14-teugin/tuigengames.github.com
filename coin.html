@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>코인 게임</title>
+
+<style>
+body{
+background:#0f172a;
+color:white;
+font-family:sans-serif;
+text-align:center;
+}
+
+.coin{
+border:1px solid #444;
+margin:10px;
+padding:10px;
+}
+
+button{
+padding:6px 10px;
+margin:4px;
+}
+
+.up{color:lime;}
+.down{color:red;}
+
+#loading{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:black;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+}
+
+#barBox{
+width:300px;
+height:20px;
+background:#333;
+border-radius:10px;
+overflow:hidden;
+}
+
+#bar{
+width:0%;
+height:100%;
+background:lime;
+}
+
+/* 관리자 패널 스타일 */
+#adminPanel{
+margin-top:20px;
+border:1px solid #888;
+padding:10px;
+text-align:left;
+width:320px;
+margin-left:auto;
+margin-right:auto;
+}
+</style>
+
+</head>
+<body>
+
+<!-- 로딩 -->
+<div id="loading">
+<h2>로딩중...</h2>
+<div id="barBox">
+<div id="bar"></div>
+</div>
+<p id="percent">0%</p>
+</div>
+
+<h1>코인 게임</h1>
+
+<h2>돈: <span id="money">0</span> 원</h2>
+
+<button onclick="sellAll()">모두 판매</button>
+<button onclick="save()">저장</button>
+<button onclick="load()">불러오기</button>
+<button onclick="resetGame()">리셋</button>
+
+<div id="coins"></div>
+
+<!-- 관리자 패널 -->
+<div id="adminPanel">
+<h3>관리자 패널</h3>
+<input type="password" id="adminPass" placeholder="비밀번호">
+<button onclick="loginAdmin()">로그인</button>
+
+<div id="adminControls" style="display:none; margin-top:10px;">
+<button onclick="toggleAdminPanel()">패널 토글</button>
+
+<div id="adminInner" style="display:none; margin-top:10px;">
+<!-- 돈 설정 -->
+<label>돈 설정:</label>
+<input type="number" id="setMoney" placeholder="금액">
+<button onclick="setMoneyAdmin()">적용</button>
+<br><br>
+<!-- 코인 임시 조정 -->
+<label>코인:</label>
+<select id="adminCoin">
+  <option value="bitcoin">BTC</option>
+  <option value="ethereum">ETH</option>
+  <option value="binancecoin">BNB</option>
+</select>
+<label>가격:</label>
+<input type="number" id="adminPrice" placeholder="임시가격">
+<label>시간(초):</label>
+<input type="number" id="adminTime" placeholder="초">
+<button onclick="tempSetCoin()">적용</button>
+</div>
+</div>
+</div>
+
+<script>
+// 게임 초기화
+let money=500000000
+
+let coins={
+bitcoin:{name:"BTC",amount:0},
+ethereum:{name:"ETH",amount:0},
+binancecoin:{name:"BNB",amount:0}
+}
+
+let prices={}
+let lastPrices={}
+
+const coinsDiv=document.getElementById("coins")
+
+for(let key in coins){
+let div=document.createElement("div")
+div.className="coin"
+
+div.innerHTML=`
+<h3>${coins[key].name}</h3>
+가격: <span id="price_${key}">0</span>
+<span id="status_${key}"></span>
+<br>
+보유: <span id="amount_${key}">0</span>
+<br>
+<button onclick="buy('${key}')">매수</button>
+<button onclick="sell('${key}')">매도</button>
+`
+
+coinsDiv.appendChild(div)
+}
+
+function updateUI(){
+for(let key in coins){
+let price=prices[key]||0
+document.getElementById("price_"+key).innerText=price.toLocaleString()
+let status=""
+if(lastPrices[key]!=null){
+if(price>lastPrices[key]) status="<span class='up'>▲</span>"
+else if(price<lastPrices[key]) status="<span class='down'>▼</span>"
+}
+document.getElementById("status_"+key).innerHTML=status
+lastPrices[key]=price
+document.getElementById("amount_"+key).innerText=coins[key].amount
+}
+document.getElementById("money").innerText=money.toLocaleString()
+}
+
+async function getPrice(){
+try{
+let r=await fetch(
+"https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin&vs_currencies=krw"
+)
+let d=await r.json()
+prices.bitcoin=Math.floor(d.bitcoin.krw)
+prices.ethereum=Math.floor(d.ethereum.krw)
+prices.binancecoin=Math.floor(d.binancecoin.krw)
+updateUI()
+}catch(e){}
+}
+
+function buy(key){
+let price=prices[key]
+if(money>=price){
+money-=price
+coins[key].amount++
+updateUI()
+}
+}
+
+function sell(key){
+if(coins[key].amount>0){
+money+=prices[key]
+coins[key].amount--
+updateUI()
+}
+}
+
+function sellAll(){
+for(let key in coins){
+money+=coins[key].amount*prices[key]
+coins[key].amount=0
+}
+updateUI()
+}
+
+function save(){
+localStorage.setItem("coinGame",JSON.stringify({money,coins}))
+}
+
+function load(){
+let data=localStorage.getItem("coinGame")
+if(data){
+let obj=JSON.parse(data)
+money=obj.money
+coins=obj.coins
+updateUI()
+}
+}
+
+function resetGame(){
+localStorage.removeItem("coinGame")
+location.reload()
+}
+
+/* 가격 업데이트 3초 */
+setInterval(getPrice,3000)
+
+/* 1분 보상 */
+setInterval(()=>{
+money+=10000000
+updateUI()
+},60000)
+
+/* 로딩 7초 + 랜덤 멈춤 */
+let progress=0
+let paused=false
+let randomStop=Math.floor(Math.random()*40)+30
+let stopped=false
+
+let bar=setInterval(()=>{
+if(paused)return
+progress++
+document.getElementById("bar").style.width=progress+"%"
+document.getElementById("percent").innerText=progress+"%"
+
+/* 랜덤 1초 멈춤 */
+if(progress===randomStop && !stopped){
+stopped=true
+paused=true
+setTimeout(()=>{paused=false},1000)
+}
+
+/* 99% 멈춤 */
+if(progress===99){
+paused=true
+setTimeout(()=>{
+progress=100
+document.getElementById("bar").style.width="100%"
+document.getElementById("percent").innerText="100%"
+setTimeout(()=>{
+document.getElementById("loading").style.display="none"
+getPrice()
+clearInterval(bar)
+},500)
+},1000)
+}
+},70)
+
+/* 관리자 패널 스크립트 */
+let adminLogged=false
+function loginAdmin(){
+let pass=document.getElementById("adminPass").value
+if(pass==="1234"){
+alert("관리자 로그인 성공")
+document.getElementById("adminControls").style.display="block"
+adminLogged=true
+}else{
+alert("비밀번호 틀림")
+}
+}
+
+function toggleAdminPanel(){
+if(!adminLogged) return
+let panel=document.getElementById("adminInner")
+panel.style.display=(panel.style.display==="none")?"block":"none"
+}
+
+function setMoneyAdmin(){
+let m=parseInt(document.getElementById("setMoney").value)
+if(!isNaN(m)){
+money=m
+updateUI()
+alert("돈이 설정됨: "+money.toLocaleString()+"원")
+}
+}
+
+function tempSetCoin(){
+let key=document.getElementById("adminCoin").value
+let price=parseInt(document.getElementById("adminPrice").value)
+let time=parseInt(document.getElementById("adminTime").value)*1000
+if(isNaN(price) || isNaN(time)) return
+let original=prices[key]
+prices[key]=price
+updateUI()
+alert(key+" 가격이 "+price.toLocaleString()+"원으로 "+(time/1000)+"초 동안 변경됨")
+setTimeout(()=>{
+prices[key]=original
+updateUI()
+alert(key+" 가격이 원래대로 복원됨")
+}, time)
+}
+</script>
+
+</body>
+</html>
