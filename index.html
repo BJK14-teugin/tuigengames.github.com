@@ -1,22 +1,59 @@
-<!DOCTYPE html>
-<html>
-<body style="background:#111; color:white; text-align:center; font-family:sans-serif;">
+<!DOCTYPE html><html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>퇴근 게임즈</title><style>
+body{
+background:#0d0d0f;
+color:white;
+font-family:sans-serif;
+display:flex;
+justify-content:center;
+align-items:center;
+min-height:100vh;
+margin:0;
+}
 
-<h1>퇴근 게임즈</h1>
+.container{
+width:100%;
+max-width:500px;
+text-align:center;
+}
 
-<div style="display:flex; flex-direction:column; gap:15px; width:220px; margin:auto;">
+h1{
+margin-bottom:30px;
+font-size:40px;
+}
 
-<button onclick="location.href='neonsnake.html'">네온 스네이크</button>
+.game{
+background:#1a1a1e;
+padding:20px;
+margin:15px 0;
+border-radius:15px;
+cursor:pointer;
+transition:0.2s;
+border:1px solid #333;
+}
 
-<button onclick="location.href='gachauniverse.html'">가챠 유니버스</button>
+.game:hover{
+transform:scale(1.05);
+background:#222;
+}
 
-<button onclick="location.href='coingame.html'">코인 게임</button>
-
-<button onclick="location.href='blacksmith.html'">전설의 대장장이</button>
-
-<button onclick="location.href='flappyduck.html'">플래피 러버덕</button>
-
-</div>
-
-</body>
+.game h2{
+margin:0;
+}
+</style></head><body><div class="container"><h1>🎮 퇴근 게임즈</h1><div class="game" onclick="openGame('snake.html')">
+<h2>🐍 NEON SNAKE</h2>
+</div><div class="game" onclick="openGame('gacha.html')">
+<h2>🎰 가챠 유니버스</h2>
+</div><div class="game" onclick="openGame('coin.html')">
+<h2>📈 코인 게임</h2>
+</div><div class="game" onclick="openGame('blacksmith.html')">
+<h2>⚒️ 전설의 대장장이</h2>
+</div></div><script>
+function openGame(game){
+window.location.href = game;
+}
+</script></body>
 </html>
